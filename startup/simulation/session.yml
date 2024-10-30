@@ -16,7 +16,9 @@ windows:
   - gazebo:
       layout: tiled
       panes:
-        - waitForRos; roslaunch ardupilot_gazebo kopterworx.launch use_sim_time:=true
+        - waitForRos; roslaunch ardupilot_gazebo kopterworx.launch 
+          use_sim_time:=true
+          world:=$(rospack find dipl_proj_2024)/worlds/pipes_world.world
         - waitForRos; waitForSimulation; roslaunch dipl_proj_2024 spawn_pipes.launch
   - arm&takeof:
       layout: tiled
