@@ -1,0 +1,35 @@
+name: simulation
+root: ./
+startup_window: status
+pre_window: |
+  export UAV_NAMESPACE=duckorange;
+windows:
+  - roscore:
+      layout: tiled
+      panes:
+        - roscore
+        - export SITL_RITW_TERMINAL="tmux new-window -d -n:ardupilot1"; waitForRos; 
+          roslaunch ardupilot_gazebo sim_vehicle.launch 
+          enable_console:=false
+          additional_arguments:="--no-rebuild"
+        - waitForRos; rosparam set use_sim_time true; roslaunch ardupilot_gazebo mavros.launch 
+  - gazebo:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch ardupilot_gazebo kopterworx.launch use_sim_time:=true
+  - arm&takeof:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch uav_ros_control pid_carrot.launch
+        - rosrun ardupilot_gazebo automatic_takeoff.sh
+  - trajectory:
+      layout: tiled
+      panes:
+        - waitForRos; roslaunch uav_ros_tracker topp_tracker.launch
+  - status:
+      layout: tiled
+      panes:
+        - waitForRos; 
+        - waitForRos; rostopic echo /$UAV_NAMESPACE/carrot/status
+        - waitForRos; rostopic echo /$UAV_NAMESPACE/tracker/status
+        - waitForRos; rostopic echo /$UAV_NAMESPACE/tracker/remaining_trajectory
