@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="name" default="pipes_world"/>
+  <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
+  <arg name="x" default="0.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="z" default="-0.01"/>
+  <arg name="enable_logging" default="true"/>
+  <arg name="enable_ground_truth" default="true"/>
+  <arg name="log_file" default="mmuav_log"/>
+  <arg name="exclude_floor_link_from_collision_check" default="ground_plane::link"/> 
+  <arg name="model" value="~/sim_ws/src/dipl_proj_2024/models/pipes.urdf.gazebo" />
+
+</launch>

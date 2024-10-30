@@ -6,7 +6,7 @@ touch $XAUTH
 xauth nlist $DISPLAY | sed -e 's/^..../ffff/' | xauth -f $XAUTH nmerge -
 
 echo "Running Docker Container"
-CONTAINER_NAME=preddiplproj2024
+CONTAINER_NAME=dipl_proj_2024
 
 # Get distro of the built image
 distro=$(docker images $CONTAINER_NAME | tail -n1 | awk '{print $2}')
@@ -73,5 +73,5 @@ docker run \
   --env DISPLAY=$DISPLAY \
   --env TERM=xterm-256color \
   --name $full_container_name \
-  preddiplproj2024:$distro \
+  dipl_proj_2024:$distro \
   /bin/bash

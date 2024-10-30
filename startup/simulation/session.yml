@@ -17,6 +17,7 @@ windows:
       layout: tiled
       panes:
         - waitForRos; roslaunch ardupilot_gazebo kopterworx.launch use_sim_time:=true
+        - waitForRos; waitForSimulation; roslaunch dipl_proj_2024 spawn_pipes.launch
   - arm&takeof:
       layout: tiled
       panes:

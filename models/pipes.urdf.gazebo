@@ -1,0 +1,39 @@
+<robot name="pipe_model">
+
+  <link name="vertical_pipe">
+    <visual>
+      <geometry>
+        <cylinder radius="0.05" length="2.0"/>
+      </geometry>
+      <origin xyz="0 0 1" rpy="0 0 0"/>
+      <material>
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.05" length="2.0"/>
+      </geometry>
+      <origin xyz="0 0 1" rpy="0 0 0"/>
+    </collision>
+  </link>
+
+  <link name="horizontal_pipe">
+    <visual>
+      <geometry>
+        <cylinder radius="0.05" length="2.0"/>
+      </geometry>
+      <origin xyz="1 0 0" rpy="0 1.57 0"/>
+      <material>
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.05" length="2.0"/>
+      </geometry>
+      <origin xyz="1 0 0" rpy="0 1.57 0"/>
+    </collision>
+  </link>
+
+</robot>
