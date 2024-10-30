@@ -5,11 +5,14 @@
   <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
   <arg name="x" default="0.0"/>
   <arg name="y" default="0.0"/>
-  <arg name="z" default="-0.01"/>
+  <arg name="z" default="0.0"/>
   <arg name="enable_logging" default="true"/>
   <arg name="enable_ground_truth" default="true"/>
   <arg name="log_file" default="mmuav_log"/>
   <arg name="exclude_floor_link_from_collision_check" default="ground_plane::link"/> 
-  <arg name="model" value="~/sim_ws/src/dipl_proj_2024/models/pipes.urdf.gazebo" />
+  <arg name="model" value="$(find dipl_proj_2024)/models/pipes.urdf.gazebo" />
 
+  <param name="robot_description" command="$(find xacro)/xacro '$(arg model)'" />
+  <node name="spawn_pipes" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-param robot_description -urdf -model $(arg name) -x $(arg x) -y $(arg y) -z $(arg z)" />
 </launch>
