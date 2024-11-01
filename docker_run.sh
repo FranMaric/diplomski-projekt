@@ -49,12 +49,12 @@ else
   exit 0
 fi
 
-# Check if using GPU
-gpu_enabled="--gpus all"
-if [ "$distro" == "focal-nogpu" ]; then
-  gpu_enabled=""
-fi
-run_args="$gpu_enabled $run_args"
+# # Check if using GPU
+# gpu_enabled="--gpus all"
+# if [ "$distro" == "focal-nogpu" ]; then
+#   gpu_enabled=""
+# fi
+run_args=""
 
 docker run \
   $run_args \
