@@ -1,0 +1,7 @@
+id,image_name,grab_x,grab_y,grab_z,grab_roll,grab_pitch,grab_yaw,drone_x,drone_y,drone_z,drone_roll,drone_pitch,drone_yaw
+0,camera_image_0.jpeg,-2,3,3.6,0,0,0,2,3,3,0,0,pi
+1,camera_image_1.jpeg,-2,3,3.6,0,0,0,2,0,4,0,0,2*pi/3
+2,camera_image_2.jpeg,-2,-0.5,3.6,0,0,0,3,-3,2,0,0,pi
+3,camera_image_3.jpeg,-2,-0.5,3.6,0,0,0,-4,-3,3.5,0,0,pi/4
+4,camera_image_4.jpeg,-2,-0.5,3.6,0,0,0,-5,0,5,0,0,0
+5,camera_image_5.jpeg,-2,3,3.6,0,0,0,-5,2.5,5,0,0,0
