@@ -5,8 +5,8 @@ from segment_anything import sam_model_registry, SamPredictor
 
 # Initialize SAM model
 def initialize_sam_model():
-    model_type = "vit_h"  # SAM model type
-    sam_checkpoint = "sam_vit_h_4b8939.pth"  # Path to the SAM model checkpoint
+    model_type = "vit_b"  # Use the SAM ViT-B model (smallest version)
+    sam_checkpoint = "sam_vit_b_01ec64.pth"  # Path to the SAM ViT-B model checkpoint
     sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
     predictor = SamPredictor(sam)
     return predictor
@@ -23,7 +23,7 @@ def select_point(event, x, y, flags, param):
 # Main program
 def main():
     # Load the image
-    image = cv2.imread("/Users/josiphanak/Documents/EDUCATION/UNI/FER/MA/2.god/1.SEM/PROJEKT/code/fran-podaci/images/color_image_19.jpeg")  # Replace with your image path
+    image = cv2.imread("/Users/josiphanak/Documents/EDUCATION/UNI/FER/MA/2.god/1.SEM/PROJEKT/code/fran-podaci/images/color_image_22.jpeg")
     
     if image is None:
         print("Error: Could not load the image.")
@@ -40,10 +40,8 @@ def main():
     cv2.setMouseCallback("Select Points for Segmentation", select_point, {'image': display_image, 'points': selected_points})
     
     print("Please select points to segment the slanted surface. Press 'q' when done.")
-    # while len(selected_points) < 1:
-    #     cv2.waitKey(1)
     while True:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if (cv2.waitKey(1) & 0xFF == ord('q')) or len(selected_points) > 0:
             break
 
     if not selected_points:
