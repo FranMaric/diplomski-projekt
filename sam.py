@@ -14,11 +14,11 @@ def initialize_sam_model():
 # Mouse callback function to select points
 def select_point(event, x, y, flags, param):
     image, points = param['image'], param['points']
-    #if event == cv2.EVENT_LBUTTONDOWN:
-    points.append((x, y))
-    cv2.circle(image, (x, y), 5, (0, 255, 0), -1)  # Highlight the selected point
-    cv2.imshow("Select Points for Segmentation", image)
-    print(f"Point selected: ({x}, {y})")
+    if event == cv2.EVENT_LBUTTONDOWN:
+        points.append((x, y))
+        cv2.circle(image, (x, y), 5, (0, 255, 0), -1)  # Highlight the selected point
+        cv2.imshow("Select Points for Segmentation", image)
+        print(f"Point selected: ({x}, {y})")
 
 # Main program
 def main():
@@ -40,11 +40,11 @@ def main():
     cv2.setMouseCallback("Select Points for Segmentation", select_point, {'image': display_image, 'points': selected_points})
     
     print("Please select points to segment the slanted surface. Press 'q' when done.")
-    while len(selected_points) < 1:
-        cv2.waitKey(1)
-    # while True:
-    #     if cv2.waitKey(1) & 0xFF == ord('q'):
-    #         break
+    # while len(selected_points) < 1:
+    #     cv2.waitKey(1)
+    while True:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     if not selected_points:
         print("No points were selected. Exiting.")
