@@ -33,3 +33,7 @@ windows:
         - waitForRos; rostopic echo /$UAV_NAMESPACE/carrot/status
         - waitForRos; rostopic echo /$UAV_NAMESPACE/tracker/status
         - waitForRos; rostopic echo /$UAV_NAMESPACE/tracker/remaining_trajectory
+  - diplomski_projekt:
+      layout: tiled
+      panes:
+        - waitForRos; rosrun dipl_proj_2024 main.py
