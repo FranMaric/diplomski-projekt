@@ -27,8 +27,7 @@ def depth_image_callback(data):
 
 bridge = CvBridge()
 
-camera_info = {'fx': 525.0, 'fy': 525.0, 'cx': 319.5, 'cy': 239.5}  # Replace with your camera's parameters
-
+camera_info = {'fx': 381.36246688113556, 'fy': 381.36246688113556, 'cx': 320.5, 'cy': 240.5}
 
 # Function to project a 2D pixel point into 3D using depth
 def pixel_to_3d(pixel, depth_data, fx, fy, cx, cy):
@@ -160,8 +159,8 @@ def on_trigger_event_callback():
         return
     
     image = bridge.imgmsg_to_cv2(current_colored_image, "bgr8")
-    fx, fy = 600, 600  # ovo moramo saznat koje su vrijednosti dronove kamere 
-    cx, cy = image.shape[1] // 2, image.shape[0] // 2  # centar slike 
+    fx, fy = camera_info['fx'], camera_info['fy'] 
+    cx, cy = image.shape[1] // 2, image.shape[0] // 2  # centar slike inace, ali treba probati i sa ovim vrijednostima iz camera_info da vidimo sto bolje radi
     display_image = image.copy()
 
     cv2.namedWindow(cv_window_name)
