@@ -81,14 +81,9 @@ def main():
     # Perform surface segmentation using SAM
     best_mask, highlighted_image, mask_overlay = segment_surface_with_sam(image, selected_point, predictor)
     
-    true_vals_with_row_index = []
+    true_indices = np.argwhere(best_mask == 1)
 
-    # Find the rows that contain True values and their corresponding column indices
-    for row_index in range(len(best_mask)):  # Iterate over rows using their indices
-        if best_mask[row_index].any():  # Check if the row contains any True (or 1) value
-            true_vals = np.where(best_mask[row_index] == 1)[0]
-            for col_index in true_vals:
-                true_vals_with_row_index.append([col_index, row_index])  # [column, row]
+    true_vals_with_row_index = true_indices[:, [1, 0]]  # Switch column and row order
 
   
     # Step 2: Randomly select 3 points from these surface points
