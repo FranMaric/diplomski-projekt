@@ -1,5 +1,5 @@
 import cv2
-import rospy
+import rospy, tf
 import numpy as np
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -10,6 +10,7 @@ from geometry_msgs.msg import PoseStamped
 current_colored_image = None
 current_depth_image = None
 pose_publisher = None
+tf_listener = None
 
 cv_window_name = "Drone image"
 
@@ -119,7 +120,19 @@ def compute_6dof_pose(points_3d, selected_points, fx, fy, cx, cy):
     return transformed_6dof
 
 
-def publish_6dof_pose(result, frame_id="camera_frame"):
+def transform_from_camera_to_world_frame(pose_msg):
+    try:
+        pose_in_base_link = tf_listener.transformPose('duckorange/base_link', pose_msg)
+        pose_in_world = tf_listener.transformPose('world', pose_in_base_link)
+        pose_in_world.header.frame_id = 'world'
+        rospy.loginfo("Pose transformed successfully.")
+
+        return pose_in_world
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+        rospy.logerr(f"Error transforming pose: {e}")
+
+
+def publish_6dof_pose(result):
     # SALJE RESULTAT DALJE LUKI NA OBRADU 
     if result["success"]:
         print("Transformed 6DOF Pose:")
@@ -128,8 +141,7 @@ def publish_6dof_pose(result, frame_id="camera_frame"):
 
         # Create PoseStamped message
         pose_msg = PoseStamped()
-        pose_msg.header.stamp = rospy.Time.now()
-        pose_msg.header.frame_id = frame_id
+        pose_msg.header.frame_id = 'duckorange/camera_box'
 
         # Assign position (translation vector tvec)
         pose_msg.pose.position.x = result["position"][0]
@@ -142,7 +154,8 @@ def publish_6dof_pose(result, frame_id="camera_frame"):
         pose_msg.pose.orientation.z = result["orientation"][2]
         pose_msg.pose.orientation.w = 0  # Not meaningful here but required by PoseStamped
 
-        # Publish the pose
+        pose_msg = transform_from_camera_to_world_frame(pose_msg)
+
         pose_publisher.publish(pose_msg)
         print("Published 6DOF pose (position + rvec) to /drone/landing_pose")
     else:
@@ -198,12 +211,15 @@ def on_trigger_event_callback():
 
 # Main function
 def main():
-    global pose_publisher
-     # Initialize ROS node
+    global pose_publisher, tf_listener
+    
+    # Initialize ROS node
     rospy.init_node("drone_video_processor", anonymous=True)
     rospy.Subscriber('/duckorange/camera/color/image_raw', Image, color_image_callback)
     rospy.Subscriber('/duckorange/camera/depth/image_raw', Image, depth_image_callback)
     
+    tf_listener = tf.TransformListener()
+
     # za slanje dalje rezultata luki
     pose_publisher = rospy.Publisher("/drone/landing_pose", PoseStamped, queue_size=1)
 
