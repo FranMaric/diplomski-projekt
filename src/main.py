@@ -9,6 +9,7 @@ import torch
 from segment_anything import sam_model_registry, SamPredictor
 import random
 import sys
+import math
 
 np.set_printoptions(threshold=np.inf)
 
@@ -255,18 +256,21 @@ def on_trigger_event_callback():
     points_3d = [pixel_to_3d(p, depth_image, fx, fy, cx, cy) for p in selected_points]
     rospy.loginfo(f"3D Points: {points_3d}")
 
-    result = compute_6dof_pose(points_3d, selected_points, fx, fy, cx, cy)
+    try:
+        result = compute_6dof_pose(points_3d, selected_points, fx, fy, cx, cy)
 
-    # Check if the computation was successful
-    if not result["success"]:
-        rospy.loginfo("6DOF pose computation failed.")
-        return
+        # Check if the computation was successful
+        if not result["success"]:
+            rospy.loginfo("6DOF pose computation failed.")
+            return
 
-    rospy.loginfo("Transformed 6DOF Pose:")
-    rospy.loginfo(f"Position: {result['position']}")
-    rospy.loginfo(f"Orientation (degrees): {result['orientation']}")    
+        rospy.loginfo("Transformed 6DOF Pose:")
+        rospy.loginfo(f"Position: {result['position']}")
+        rospy.loginfo(f"Orientation (degrees): {result['orientation']}")    
 
-    publish_6dof_pose(result)  
+        publish_6dof_pose(result)
+    except Exception as e:
+        rospy.logerr(f"Failed to compute 6DOF pose: {e}")
 
 
 # Main function
