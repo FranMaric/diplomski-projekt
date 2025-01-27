@@ -122,8 +122,7 @@ def compute_6dof_pose(points_3d, selected_points, fx, fy, cx, cy):
 
 def transform_from_camera_to_world_frame(pose_msg):
     try:
-        pose_in_base_link = tf_listener.transformPose('duckorange/base_link', pose_msg)
-        pose_in_world = tf_listener.transformPose('world', pose_in_base_link)
+        pose_in_world = tf_listener.transformPose('world', pose_msg)
         pose_in_world.header.frame_id = 'world'
         rospy.loginfo("Pose transformed successfully.")
 
@@ -141,18 +140,29 @@ def publish_6dof_pose(result):
 
         # Create PoseStamped message
         pose_msg = PoseStamped()
-        pose_msg.header.frame_id = 'duckorange/camera_box'
+        pose_msg.header.frame_id = 'duckorange/camera'
 
         # Assign position (translation vector tvec)
         pose_msg.pose.position.x = result["position"][0]
         pose_msg.pose.position.y = result["position"][1]
         pose_msg.pose.position.z = result["position"][2]
 
-        # Assign orientation directly as a rotation vector (degrees)
-        pose_msg.pose.orientation.x = result["orientation"][0]
-        pose_msg.pose.orientation.y = result["orientation"][1]
-        pose_msg.pose.orientation.z = result["orientation"][2]
-        pose_msg.pose.orientation.w = 0  # Not meaningful here but required by PoseStamped
+        # Convert orientation (rotation vector in degrees) to quaternion
+        rotation_vector = np.radians(result["orientation"])  # Convert degrees to radians
+        angle = np.linalg.norm(rotation_vector)
+        
+        if angle > 1e-6:  # Avoid divide-by-zero for zero rotation
+            axis = rotation_vector / angle
+            quaternion = tf.transformations.quaternion_about_axis(angle, axis)
+        else:
+            # Identity rotation
+            quaternion = [0, 0, 0, 1]
+
+        # Assign quaternion to PoseStamped message
+        pose_msg.pose.orientation.x = quaternion[0]
+        pose_msg.pose.orientation.y = quaternion[1]
+        pose_msg.pose.orientation.z = quaternion[2]
+        pose_msg.pose.orientation.w = quaternion[3]
 
         pose_msg = transform_from_camera_to_world_frame(pose_msg)
 
