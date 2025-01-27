@@ -12,9 +12,8 @@ WORKDIR $HOME/$CATKIN_WORKSPACE/src
 RUN catkin build --limit-status-rate 0.2 --jobs ${nproc-1}
 
 # --------------- install programs ---------------
-RUN sudo apt-get update && sudo apt-get install -q -y \
-    nano \
-    vim
+RUN sudo apt-get update && sudo apt-get install -q -y nano
+RUN pip install -r dipl_proj_2024/requirements.txt
 
 ARG ROS_HOSTNAME=localhost.local
 ARG ROS_MASTER_URI=http://localhost.local:11311

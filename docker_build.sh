@@ -3,6 +3,19 @@
 DOCKERFILE=Dockerfile
 IMAGE_NAME=dipl_proj_2024
 
+# Download SAM model weights
+MODEL_URL="https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"
+DEST_FILE="./src/sam_vit_b_01ec64.pth"
+
+# Check if the .pth file already exists
+if [ -f "$DEST_FILE" ]; then
+    echo "Model weights already exist at $DEST_FILE. Skipping download"
+else
+    echo "Downloading SAM model weights"
+    curl -o "./src/sam_vit_b_01ec64.pth" "$MODEL_URL"
+    echo "Model weights downloaded to $DEST_FILE."
+fi
+
 distro="noetic"
 ros_distro="focal"
 build_args=""

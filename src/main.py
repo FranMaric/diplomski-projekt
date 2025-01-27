@@ -5,12 +5,18 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
+import torch
+from segment_anything import sam_model_registry, SamPredictor
+import random
+import sys
 
+np.set_printoptions(threshold=np.inf)
 
 current_colored_image = None
 current_depth_image = None
 pose_publisher = None
 tf_listener = None
+predictor = None
 
 cv_window_name = "Drone image"
 
@@ -29,6 +35,36 @@ def depth_image_callback(data):
 bridge = CvBridge()
 
 camera_info = {'fx': 381.36246688113556, 'fy': 381.36246688113556, 'cx': 320.5, 'cy': 240.5}
+
+
+def initialize_sam_model(pth_file):
+    model_type = "vit_b"  # Use the SAM ViT-B model (smallest version)
+    sam = sam_model_registry[model_type](checkpoint=pth_file)
+    predictor = SamPredictor(sam)
+    return predictor
+
+
+# Function to perform segmentation using SAM
+def segment_surface_with_sam(image, selected_points, predictor):
+    input_points = np.array(selected_points)
+    input_labels = np.ones(input_points.shape[0])  # All points are positive examples (label = 1)
+
+    # Perform segmentation using SAM
+    masks, scores, _ = predictor.predict(
+        point_coords=input_points,
+        point_labels=input_labels,
+        # multimask_output=True  # Get multiple mask options
+        multimask_output=False
+    )
+
+    # Select the best mask (highest score)
+    best_mask = masks[np.argmax(scores)]
+    # Overlay the mask on the image
+    mask_overlay = (best_mask[:, :, None] * np.array([0, 0, 255])).astype(np.uint8)  # Highlight in blue
+    highlighted_image = cv2.addWeighted(image, 0.6, mask_overlay, 0.4, 0)
+    
+    return best_mask, highlighted_image, mask_overlay
+
 
 # Function to project a 2D pixel point into 3D using depth
 def pixel_to_3d(pixel, depth_data, fx, fy, cx, cy):
@@ -50,8 +86,7 @@ def select_point(event, x, y, flags, param):
         cv2.circle(image, (x, y), 5, color, -1)
         cv2.imshow(cv_window_name, image)
         rospy.loginfo(f"Point selected: ({x}, {y})")
-        if len(points) == 4:  # Stop after 4 points
-            cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
 
 
 def compute_6dof_pose(points_3d, selected_points, fx, fy, cx, cy):
@@ -182,6 +217,7 @@ def on_trigger_event_callback():
         return
     
     image = bridge.imgmsg_to_cv2(current_colored_image, "bgr8")
+    predictor.set_image(image)
     fx, fy = camera_info['fx'], camera_info['fy'] 
     cx, cy = image.shape[1] // 2, image.shape[0] // 2  # centar slike inace, ali treba probati i sa ovim vrijednostima iz camera_info da vidimo sto bolje radi
     display_image = image.copy()
@@ -189,17 +225,31 @@ def on_trigger_event_callback():
     cv2.namedWindow(cv_window_name)
     cv2.imshow(cv_window_name, display_image)
     cv2.waitKey(1)
-    
+
     # Set up mouse to select a landing point
-    selected_points = []
-    cv2.setMouseCallback(cv_window_name, select_point, {'image': display_image, 'points': selected_points})
-    rospy.loginfo("Please select the waypoint")
-    while len(selected_points) < 4:
+    selected_point = []
+    cv2.setMouseCallback(cv_window_name, select_point, {'image': display_image, 'points': selected_point})
+    rospy.loginfo("Please select the surface")
+    while len(selected_point) == 0:
         cv2.waitKey(1)
         continue
 
-    # Convert selected 2D points to 3D points
-    # moramo nekako saznat podatke o dubini
+    best_mask, highlighted_image, mask_overlay = segment_surface_with_sam(image, selected_point, predictor)
+    
+    true_indices = np.argwhere(best_mask == 1)
+
+    true_vals_with_row_index = true_indices[:, [1, 0]]  # Switch column and row order
+
+    if len(true_vals_with_row_index) < 3:
+        rospy.logwarn("Not enough points on the surface to select 3 random points.")
+        return
+
+    random_selected_points = random.sample(list(true_vals_with_row_index), 3) # Randomly select 3 points from mask
+    rospy.loginfo(f"Randomly selected points: {random_selected_points}")
+
+    # Combine the first selected point with the random points
+    selected_points = selected_point + random_selected_points  # Add the random points to the selected points
+
     depth_image = bridge.imgmsg_to_cv2(current_depth_image, desired_encoding="passthrough")
 
     points_3d = [pixel_to_3d(p, depth_image, fx, fy, cx, cy) for p in selected_points]
@@ -211,26 +261,28 @@ def on_trigger_event_callback():
     if not result["success"]:
         rospy.loginfo("6DOF pose computation failed.")
         return
-    
+
     rospy.loginfo("Transformed 6DOF Pose:")
     rospy.loginfo(f"Position: {result['position']}")
     rospy.loginfo(f"Orientation (degrees): {result['orientation']}")    
 
-    publish_6dof_pose(result)  # SALJI LUKI DALJE REZULTAT      
+    publish_6dof_pose(result)  
 
 
 # Main function
 def main():
-    global pose_publisher, tf_listener
-    
-    # Initialize ROS node
+    global pose_publisher, tf_listener, predictor
+
     rospy.init_node("drone_video_processor", anonymous=True)
+
+    pth_file = sys.argv[1]
+    predictor = initialize_sam_model(pth_file)
+    rospy.loginfo("Initialized SAM model")
+
+    # Initialize ROS node
     rospy.Subscriber('/duckorange/camera/color/image_raw', Image, color_image_callback)
     rospy.Subscriber('/duckorange/camera/depth/image_raw', Image, depth_image_callback)
-    
     tf_listener = tf.TransformListener()
-
-    # za slanje dalje rezultata luki
     pose_publisher = rospy.Publisher("/drone/landing_pose", PoseStamped, queue_size=1)
 
     rospy.loginfo("Video processing node started")

@@ -36,4 +36,4 @@ windows:
   - diplomski_projekt:
       layout: tiled
       panes:
-        - waitForRos; rosrun dipl_proj_2024 main.py
+        - waitForRos; rosrun dipl_proj_2024 main.py $(rospack find dipl_proj_2024)/src/sam_vit_b_01ec64.pth
