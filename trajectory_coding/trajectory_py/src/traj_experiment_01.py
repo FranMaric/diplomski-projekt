@@ -48,18 +48,16 @@ class TrajectoryPublisherNode:
         self.pub_triger = rospy.Publisher('/triger', PoseStamped, queue_size=10)
 
         # Subscriber to the trigger topic
-        rospy.Subscriber('/trigger/send_dots', String, self.trigger_callback)
+        rospy.Subscriber('/drone/landing_pose', PoseStamped, self.trigger_callback)
         rospy.Subscriber('/fastp_trajectory', PoseArray, self.fastp_trajectory_callback)
 
         rospy.loginfo("TrajectoryPublisherNode is ready and waiting for triggers.")
 
     def trigger_callback(self, msg):
         """Callback function for the trigger topic."""
-        rospy.loginfo("Received trigger: %s", msg.data)
+        rospy.loginfo("Received trigger: %s", msg)
 
-        # Create and publish the trajectory points
-        self.publish_trajectory()
-        #self.publish_pose()
+        self.publish_pose(msg)
 
     def fastp_trajectory_callback(self, msg):
         rospy.loginfo("Received PoseArray with %d poses", len(msg.poses))
@@ -82,12 +80,9 @@ class TrajectoryPublisherNode:
             time_from_start_secs += time_step
 
         trajectory_msg.points = points
-        #self.publish_trajectory()
 
         rospy.loginfo("Publishing MultiDOFJointTrajectory with points")
         self.pub.publish(trajectory_msg)
-
-
 
     def publish_trajectory(self):
         """Creates and publishes the trajectory message with 3 points."""
@@ -110,23 +105,23 @@ class TrajectoryPublisherNode:
         rospy.loginfo("Publishing trajectory with 3 points.")
         self.pub.publish(trajectory_msg)
 
-
-
-    def publish_pose(self): 
+    def publish_pose(self, goal_pose): 
         pose_msg = PoseStamped()
         pose_msg.header.stamp = rospy.Time.now()
         pose_msg.header.frame_id = 'world'  
 
-        pose_msg.pose.position.x = 8
-        pose_msg.pose.position.y = 6
-        pose_msg.pose.position.z = 10
+        # Set position from goal_pose
+        pose_msg.pose.position.x = goal_pose.pose.position.x
+        pose_msg.pose.position.y = goal_pose.pose.position.y
+        pose_msg.pose.position.z = goal_pose.pose.position.z
 
+        # Keep orientation fixed
         pose_msg.pose.orientation.x = 0.0
         pose_msg.pose.orientation.y = 0.0
         pose_msg.pose.orientation.z = 0.0
         pose_msg.pose.orientation.w = 1.0
 
-        rospy.loginfo(f"Publishing PoseStamped: position=(8, 6, 10)")
+        rospy.loginfo(f"Publishing PoseStamped: position=({pose_msg.pose.position.x}, {pose_msg.pose.position.y}, {pose_msg.pose.position.z})")
         self.pub_triger.publish(pose_msg)
 
     def spin(self):
