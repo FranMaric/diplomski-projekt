@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
-from geometry_msgs.msg import Transform, Twist, Vector3, PoseStamped, PoseArray
-from std_msgs.msg import String
+from geometry_msgs.msg import Transform, Twist, Vector3, PoseStamped, PoseArray, Pose
 
 
 def create_point(x, y, z, time_from_start_secs):
@@ -40,25 +39,36 @@ def create_point(x, y, z, time_from_start_secs):
 
 class TrajectoryPublisherNode:
     def __init__(self):
-        # Initialize the ROS node
         rospy.init_node('traj_experiment_01', anonymous=True)
 
-        # Publisher for the trajectory points
         self.pub = rospy.Publisher('/duckorange/tracker/input_trajectory', MultiDOFJointTrajectory, queue_size=10)
-        self.pub_triger = rospy.Publisher('/triger', PoseStamped, queue_size=10)
+        self.pub_triger = rospy.Publisher('/drone0/planning/triger/array', PoseArray, queue_size=10)
 
-        # Subscriber to the trigger topic
         rospy.Subscriber('/drone/landing_pose', PoseStamped, self.trigger_callback)
         rospy.Subscriber('/fastp_trajectory', PoseArray, self.fastp_trajectory_callback)
+        rospy.Subscriber('/duckorange/pose', PoseStamped, self.pose_callback)
+
+        self.drone_pose = Pose()
 
         rospy.loginfo("TrajectoryPublisherNode is ready and waiting for triggers.")
 
     def trigger_callback(self, msg):
         """Callback function for the trigger topic."""
-        rospy.loginfo("Received trigger: %s", msg)
 
+        #self.publish_trajectory()
+        rospy.loginfo("Received trigger: %s", msg.pose.position)
         self.publish_pose(msg)
 
+    def pose_callback(self, msg):
+        self.drone_pose.position.x = msg.pose.position.x
+        self.drone_pose.position.y = msg.pose.position.y
+        self.drone_pose.position.z = msg.pose.position.z
+
+        self.drone_pose.orientation.x = msg.pose.orientation.x
+        self.drone_pose.orientation.y = msg.pose.orientation.y
+        self.drone_pose.orientation.z = msg.pose.orientation.z
+        self.drone_pose.orientation.w = msg.pose.orientation.w
+    
     def fastp_trajectory_callback(self, msg):
         rospy.loginfo("Received PoseArray with %d poses", len(msg.poses))
 
@@ -70,10 +80,11 @@ class TrajectoryPublisherNode:
         points = []
         time_from_start_secs = 0.0  # Increment time for each point
         time_step = 1.0  # Example time step between points
+        
 
         for pose in msg.poses:
-            x = pose.position.x
-            y = pose.position.y
+            x = -1*pose.position.y 
+            y = pose.position.x
             z = pose.position.z
 
             points.append(create_point(x, y, z, time_from_start_secs))
@@ -91,7 +102,6 @@ class TrajectoryPublisherNode:
         trajectory_msg.header.frame_id = 'world'
         trajectory_msg.joint_names = ['base_link']
 
-        # Add trajectory points
         points = [
             create_point(4, 4, 4, 1),
             create_point(8, 4, 8, 2),
@@ -101,33 +111,29 @@ class TrajectoryPublisherNode:
 
         trajectory_msg.points = points
 
-        # Publish the trajectory
         rospy.loginfo("Publishing trajectory with 3 points.")
         self.pub.publish(trajectory_msg)
 
-    def publish_pose(self, goal_pose): 
-        pose_msg = PoseStamped()
-        pose_msg.header.stamp = rospy.Time.now()
-        pose_msg.header.frame_id = 'world'  
+    def publish_pose(self, target_pose): 
+        pose_array = PoseArray()
+        pose_array.header.stamp = rospy.Time.now()
+        pose_array.header.frame_id = "world" 
 
-        # Set position from goal_pose
-        pose_msg.pose.position.x = goal_pose.pose.position.x
-        pose_msg.pose.position.y = goal_pose.pose.position.y
-        pose_msg.pose.position.z = goal_pose.pose.position.z
+        target = Pose()
+        target.position.x = target_pose.pose.position.x
+        target.position.y = target_pose.pose.position.y
+        target.position.z = target_pose.pose.position.z
+        target.orientation = target_pose.pose.orientation
 
-        # Keep orientation fixed
-        pose_msg.pose.orientation.x = 0.0
-        pose_msg.pose.orientation.y = 0.0
-        pose_msg.pose.orientation.z = 0.0
-        pose_msg.pose.orientation.w = 1.0
+        pose_array.poses.append(target)
+        pose_array.poses.append(self.drone_pose)
 
-        rospy.loginfo(f"Publishing PoseStamped: position=({pose_msg.pose.position.x}, {pose_msg.pose.position.y}, {pose_msg.pose.position.z})")
-        self.pub_triger.publish(pose_msg)
+        rospy.loginfo(f"Publishing array")
+        self.pub_triger.publish(pose_array)
 
     def spin(self):
         """Keeps the node running."""
         rospy.spin()
-
 
 if __name__ == '__main__':
     try:
@@ -135,3 +141,4 @@ if __name__ == '__main__':
         node.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo("Shutting down TrajectoryPublisherNode.")
+
