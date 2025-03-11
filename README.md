@@ -76,7 +76,7 @@ The simulation includes:
 - Recording **RGB-D data** using ROS with fixed distances and angles.
 
 ## Demo
-![Demo GIF](https://github.com/FranMaric/diplomski-projekt/demo.gif)
+![Demo GIF](demo.gif)
 
 
 ---
